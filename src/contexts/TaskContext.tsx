@@ -9,12 +9,11 @@ import {
   useState,
 } from "react";
 import { isSortable } from "@dnd-kit/react/sortable";
-import type { DragDropEventHandlers } from "@dnd-kit/react";
+import { useDndMonitor } from "@dnd-kit/core";
 
 interface TaskContextData {
   tasks: TaskFormData[];
   addTask: (task: TaskFormData) => void;
-  moveTask: (event: Parameters<DragDropEventHandlers["onDragEnd"]>[0]) => void;
 }
 
 interface TaskContextProps {
@@ -30,8 +29,11 @@ export function TaskProvider({ children }: TaskContextProps) {
     setTasks((prev) => [t, ...prev]);
   }, []);
 
-  const moveTask = useCallback(
-    (event: Parameters<DragDropEventHandlers["onDragEnd"]>[0]) => {
+  // useDndMonitor is used to listen for drag end events from within the DnD context.
+  // Putting the handler here (and ensuring TaskProvider is rendered inside DragDropProvider)
+  // avoids scheduling React state updates inside useInsertionEffect used internally by dnd-kit.
+  useDndMonitor({
+    onDragEnd: (event) => {
       if (event.canceled) return;
 
       const { source } = event.operation;
@@ -42,54 +44,53 @@ export function TaskProvider({ children }: TaskContextProps) {
 
       if (initialGroup == null || group == null) return;
 
-      setTimeout(() => {
-        setTasks((prev) => {
-          const grouped: Record<string, TaskFormData[]> = {};
+      setTasks((prev) => {
+        // Build grouped lists (no mutation of original tasks)
+        const grouped: Record<string, TaskFormData[]> = {};
 
-          for (const task of prev) {
-            const key = task.status;
-            (grouped[key] ??= []).push(task);
-          }
+        for (const task of prev) {
+          const key = task.status;
+          (grouped[key] ??= []).push(task);
+        }
 
-          if (initialGroup === group) {
-            const items = [...(grouped[group] ?? [])];
+        if (initialGroup === group) {
+          const items = [...(grouped[group] ?? [])];
 
-            const [moved] = items.splice(initialIndex, 1);
+          const [moved] = items.splice(initialIndex, 1);
 
-            if (!moved) return prev;
+          if (!moved) return prev;
 
-            items.splice(index, 0, moved);
+          items.splice(index, 0, moved);
 
-            grouped[group] = items;
-          } else {
-            const from = [...(grouped[initialGroup] ?? [])];
+          grouped[group] = items;
+        } else {
+          const from = [...(grouped[initialGroup] ?? [])];
 
-            const [moved] = from.splice(initialIndex, 1);
+          const [moved] = from.splice(initialIndex, 1);
 
-            if (!moved) return prev;
+          if (!moved) return prev;
 
-            const movedTask: TaskFormData = {
-              ...moved,
-              status: group as TaskFormData["status"],
-            };
+          const movedTask: TaskFormData = {
+            ...moved,
+            status: group as TaskFormData["status"],
+          };
 
-            const to = [...(grouped[group] ?? [])];
+          const to = [...(grouped[group] ?? [])];
 
-            to.splice(index, 0, movedTask);
+          to.splice(index, 0, movedTask);
 
-            grouped[initialGroup] = from;
-            grouped[group] = to;
-          }
+          grouped[initialGroup] = from;
+          grouped[group] = to;
+        }
 
-          return Object.values(grouped).flat();
-        });
-      }, 1000);
+        // Return flattened tasks preserving grouping; this mirrors previous behavior
+        return Object.values(grouped).flat();
+      });
     },
-    []
-  );
+  });
 
   return (
-    <TaskContext.Provider value={{ tasks, addTask, moveTask }}>
+    <TaskContext.Provider value={{ tasks, addTask }}>
       {children}
     </TaskContext.Provider>
   );

@@ -6,6 +6,7 @@ import { Logo } from "@/components/logo";
 import { ModalCard, TaskFormData } from "@/components/modal-card";
 import { PrivateRoute } from "@/components/privateRoute";
 import { TaskProvider, useTaskContext } from "@/contexts/TaskContext";
+import { DragDropProvider } from "@dnd-kit/react";
 import { Plus } from "lucide-react";
 import { ReactNode, useState } from "react";
 
@@ -58,10 +59,12 @@ export default function DashboradLayout({ children }: { children: ReactNode }) {
                 </header>
 
                 <main className="col-start-2 overflow-y-auto p-6">
-                    <TaskProvider>
-                        {children}
-                        <ModalWithAdd modalVisible={modalVisible} setModalVisible={setModalVisible} />
-                    </TaskProvider>
+                    <DragDropProvider>
+                        <TaskProvider>
+                            {children}
+                            <ModalWithAdd modalVisible={modalVisible} setModalVisible={setModalVisible} />
+                        </TaskProvider>
+                    </DragDropProvider>
                 </main>
             </div>
         </PrivateRoute>
