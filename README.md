@@ -1,5 +1,15 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+# ToDo list com login
+Um website simple para gerenciar lista de tarefa com recurso de Drag and Drop
+- Você pode criar tarefa
+-- Colocar nome, descrição, data, estado e a cor da tarefa
+- Depois arrastar para alterar o estado livremente.
+
+### Tecnologias
+Este site foi criado com NextJS, TailwindCSS e DnD-Kit.
+
+
 ## Para comçar
 
 Primeiro instale as dependências do projeto.
