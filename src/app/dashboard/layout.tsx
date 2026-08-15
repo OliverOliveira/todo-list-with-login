@@ -28,10 +28,27 @@ function ModalWithAdd({ modalVisible, setModalVisible }: { modalVisible: boolean
     );
 }
 
+// Reads the drag handlers from the TaskContext and wires them up to the
+// DragDropProvider. This MUST be rendered as a child of <TaskProvider>,
+// otherwise useTaskContext() resolves to the default (empty) context value
+// and the handlers are undefined, meaning dropped tasks never actually get
+// their status updated.
+function DragDropBoundary({ children }: { children: ReactNode }) {
+    const { handleDragStart, handleDragOver, handleDragEnd } = useTaskContext();
+
+    return (
+        <DragDropProvider
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
+        >
+            {children}
+        </DragDropProvider>
+    );
+}
+
 export default function DashboradLayout({ children }: { children: ReactNode }) {
     const [modalVisible, setModalVisible] = useState(false);
-
-
 
     return (
         <PrivateRoute>
@@ -59,12 +76,12 @@ export default function DashboradLayout({ children }: { children: ReactNode }) {
                 </header>
 
                 <main className="col-start-2 overflow-y-auto p-6">
-                    <DragDropProvider>
-                        <TaskProvider>
+                    <TaskProvider>
+                        <DragDropBoundary>
                             {children}
                             <ModalWithAdd modalVisible={modalVisible} setModalVisible={setModalVisible} />
-                        </TaskProvider>
-                    </DragDropProvider>
+                        </DragDropBoundary>
+                    </TaskProvider>
                 </main>
             </div>
         </PrivateRoute>
